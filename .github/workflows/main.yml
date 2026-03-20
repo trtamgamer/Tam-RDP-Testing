@@ -114,21 +114,3 @@ jobs:
               exit 1
           }
           Write-Host "TCP connectivity successful!"
-
-      - name: Maintain Connection (background hidden)
-        run: |
-          Write-Host "`n=== RDP ACCESS ==="
-          Write-Host "Address: $env:TAILSCALE_IP"
-          Write-Host "Username: runneradmin"
-          Write-Host "Password: $(echo $env:RUNNERADMIN_CREDS)"
-          Write-Host "==================`n"
-
-          $scriptBlock = {
-              while ($true) {
-                  Start-Sleep -Seconds 300
-              }
-          }
-
-          $encodedScript = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($scriptBlock.ToString()))
-          Start-Process -FilePath "powershell.exe" -ArgumentList '-NoProfile', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', $encodedScript -WindowStyle Hidden
-          Write-Host "Background hidden keepalive process started."
