@@ -69,8 +69,9 @@ jobs:
               Write-Host "User $userName already exists and will be reused."
           }
 
-          Add-LocalGroupMember -Group "Administrators" -Member $userName
-          Add-LocalGroupMember -Group "Remote Desktop Users" -Member $userName
+          Add-LocalGroupMember -Group "Administrators" -Member $userName -ErrorAction SilentlyContinue
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member $userName -ErrorAction SilentlyContinue
+
 
           echo "RUNNERADMIN_CREDS=User: $userName | Password: $password" >> $env:GITHUB_ENV
 
