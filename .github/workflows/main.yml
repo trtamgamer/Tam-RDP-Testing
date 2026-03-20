@@ -36,6 +36,35 @@ jobs:
           Remove-Item "$env:USERPROFILE\Desktop\*" -Force -Recurse -ErrorAction SilentlyContinue
           Remove-Item "C:\Users\Public\Desktop\*" -Force -Recurse -ErrorAction SilentlyContinue
 
+      - name: Remove Unused Tools from C:\
+        run: |
+          $toRemove = @(
+            "C:\Android",
+            "C:\Julia",
+            "C:\Miniconda",
+            "C:\mingw32",
+            "C:\mingw64",
+            "C:\msys64",
+            "C:\ghcup",
+            "C:\npm",
+            "C:\azureCli",
+            "C:\azureDevOpsCli",
+            "C:\cobertura-2.1.1",
+            "C:\post-generation",
+            "C:\PostgreSQL",
+            "C:\Modules"
+          )
+          foreach ($path in $toRemove) {
+            if (Test-Path $path) {
+              Write-Host "Removing $path ..."
+              Remove-Item $path -Recurse -Force -ErrorAction SilentlyContinue
+              Write-Host "Done: $path"
+            } else {
+              Write-Host "Not found, skipping: $path"
+            }
+          }
+          Write-Host "Cleanup complete!"
+
       - name: Install Tailscale
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.96.3-amd64.msi"
