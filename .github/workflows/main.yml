@@ -105,7 +105,7 @@ jobs:
             "Microsoft Web Deploy 4.0",
             "Microsoft Web Platform Installer 5.1",
             "Windows SDK AddOn",
-            "Microsoft Azure Compute Emulator - v2.9.7",
+            "Microsoft Azure Compute Emulator - v2.9.7"
           )
 
           # Chay song song 5 app cung luc bang Start-Job
