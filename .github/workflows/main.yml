@@ -60,7 +60,6 @@ jobs:
             "C:\SeleniumWebDrivers",
             "C:\selenium",
             "C:\rtools45",
-            "C:\PSModuleAnalysisCachePath",
             "C:\image",
             "C:\Packages",
             "C:\WindowsAzure",
@@ -68,7 +67,8 @@ jobs:
             "C:\hostedtoolcache",
             "C:\imagedata.json",
             "C:\software-report.json",
-            "C:\software-report.md"
+            "C:\software-report.md",
+            "C:\PSModuleAnalysisCachePath"
           )
           foreach ($path in $toRemove) {
             if (Test-Path $path) {
