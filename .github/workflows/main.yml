@@ -68,7 +68,8 @@ jobs:
             "C:\imagedata.json",
             "C:\software-report.json",
             "C:\software-report.md",
-            "C:\PSModuleAnalysisCachePath"
+            "C:\PSModuleAnalysisCachePath",
+            "C:\Temp"
           )
           foreach ($path in $toRemove) {
             if (Test-Path $path) {
@@ -134,6 +135,7 @@ jobs:
             "Microsoft Web Deploy 4.0",
             "Microsoft Web Platform Installer 5.1",
             "Windows SDK AddOn",
+            "Windows Application Driver",
             "vs_CoreEditorFonts",
             "Windows Software Development Kit - Windows 10.0.26100.7705"
           )
