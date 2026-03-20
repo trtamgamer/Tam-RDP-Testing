@@ -53,13 +53,7 @@ jobs:
           $userName = "runneradmin"
 
           if (Get-LocalUser -Name $userName -ErrorAction SilentlyContinue) {
-              Write-Host "User $userName already exists, attempting to remove first..."
-              try {
-                  Remove-LocalUser -Name $userName -ErrorAction Stop
-                  Write-Host "Removed existing user $userName"
-              } catch {
-                  Write-Warning ('Could not remove existing user {0}: {1}. Will continue with existing user.' -f $userName, $_.Exception.Message)
-              }
+              Write-Host "User $userName already exists and will be reused."
           }
 
           if (-not (Get-LocalUser -Name $userName -ErrorAction SilentlyContinue)) {
@@ -136,5 +130,5 @@ jobs:
           }
 
           $encodedScript = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($scriptBlock.ToString()))
-          Start-Process -FilePath "powershell.exe" -ArgumentList '-NoProfile', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', $encodedScript -WindowStyle Hidden -NoNewWindow
+          Start-Process -FilePath "powershell.exe" -ArgumentList '-NoProfile', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', $encodedScript -WindowStyle Hidden
           Write-Host "Background hidden keepalive process started."
