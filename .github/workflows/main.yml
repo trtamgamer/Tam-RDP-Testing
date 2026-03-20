@@ -91,6 +91,7 @@ jobs:
             "Node.js",
             "OpenSSL 3.6.1 (64-bit)",
             "PostgreSQL 17",
+            "PowerShell 7-x64",
             "PowerShell Extensions for SQL Server 2016",
             "Python Launcher",
             "R for Windows 4.5.2",
@@ -104,7 +105,7 @@ jobs:
             "Microsoft Web Deploy 4.0",
             "Microsoft Web Platform Installer 5.1",
             "Windows SDK AddOn",
-            "Microsoft Azure Compute Emulator - v2.9.7"
+            "Microsoft Azure Compute Emulator - v2.9.7",
           )
 
           # Chay song song 5 app cung luc bang Start-Job
