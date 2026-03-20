@@ -71,7 +71,6 @@ jobs:
             "Microsoft .NET SDK 9.0.311 (x64) from Visual Studio",
             "Microsoft Azure Authoring Tools - v2.9.7",
             "Microsoft Azure CLI (64-bit)",
-            "Microsoft Azure Compute Emulator - v2.9.7",
             "Microsoft Azure Libraries for .NET - v2.9",
             "Microsoft Azure Service Fabric",
             "Microsoft Azure Service Fabric SDK",
@@ -92,7 +91,6 @@ jobs:
             "Node.js",
             "OpenSSL 3.6.1 (64-bit)",
             "PostgreSQL 17",
-            "PowerShell 7-x64",
             "PowerShell Extensions for SQL Server 2016",
             "Python Launcher",
             "R for Windows 4.5.2",
@@ -105,7 +103,8 @@ jobs:
             "WiX Toolset v3.14.1.8722",
             "Microsoft Web Deploy 4.0",
             "Microsoft Web Platform Installer 5.1",
-            "Windows SDK AddOn"
+            "Windows SDK AddOn",
+            "Microsoft Azure Compute Emulator - v2.9.7"
           )
 
           # Chay song song 5 app cung luc bang Start-Job
