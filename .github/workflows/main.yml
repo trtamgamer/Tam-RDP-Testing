@@ -130,21 +130,20 @@ jobs:
           )
 
           foreach ($app in $appsToRemove) {
-            Write-Host "Uninstalling: $app"
-            $result = winget uninstall --name "$app" --silent --accept-source-agreements 2>&1
-            if ($LASTEXITCODE -eq 0) {
-              Write-Host "Done: $app"
-            } else {
-              $pkg = Get-Package -Name "*$app*" -ErrorAction SilentlyContinue
-              if ($pkg) {
-                $pkg | Uninstall-Package -Force -ErrorAction SilentlyContinue
-                Write-Host "Done (fallback): $app"
-              } else {
-                Write-Host "Not found or already removed: $app"
-              }
-            }
-          }
-          Write-Host "Program uninstall complete!"
+                      Write-Host "----------------------------"
+                      Write-Host "Processing: $app"
+                      
+                      $p = Start-Process winget -ArgumentList "uninstall --name `"$app`" --silent --accept-source-agreements --force" -PassThru -NoNewWindow -ErrorAction SilentlyContinue
+                      
+                      if (-not $p.WaitForExit(90000)) {
+                        Stop-Process -Id $p.Id -Force
+                        Write-Host "Skip: $app (Treo lâu quá nên tui bỏ qua nha bà)" -ForegroundColor Yellow
+                      } else {
+                        if ($p.ExitCode -eq 0) { Write-Host "Done: $app" }
+                        else { Write-Host "Failed: $app (Error Code: $($p.ExitCode))" }
+                      }
+                    }
+                    Write-Host "Program uninstall complete!"
 
       - name: Install WinRAR
         run: |
