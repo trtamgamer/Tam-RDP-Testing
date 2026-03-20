@@ -62,10 +62,22 @@ jobs:
           $userName = "runneradmin"
 
           if (Get-LocalUser -Name $userName -ErrorAction SilentlyContinue) {
-              Remove-LocalUser -Name $userName -ErrorAction SilentlyContinue
+              Write-Host "User $userName already exists, attempting to remove first..."
+              try {
+                  Remove-LocalUser -Name $userName -ErrorAction Stop
+                  Write-Host "Removed existing user $userName"
+              } catch {
+                  Write-Warning "Could not remove existing user $userName: $_. Exception. Will continue with existing user."
+              }
           }
 
-          New-LocalUser -Name $userName -Password $securePass -AccountNeverExpires
+          if (-not (Get-LocalUser -Name $userName -ErrorAction SilentlyContinue)) {
+              New-LocalUser -Name $userName -Password $securePass -AccountNeverExpires
+              Write-Host "Created user $userName"
+          } else {
+              Write-Host "User $userName already exists and will be reused."
+          }
+
           Add-LocalGroupMember -Group "Administrators" -Member $userName
           Add-LocalGroupMember -Group "Remote Desktop Users" -Member $userName
 
