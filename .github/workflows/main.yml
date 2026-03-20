@@ -2,15 +2,13 @@ name: RDP
 
 on:
   workflow_dispatch:
-    inputs:
-      runneradmin_password:
-        description: 'Optional: custom password for runneradmin (default: random strong password)'
-        required: false
 
 jobs:
   secure-rdp:
     runs-on: windows-latest
     timeout-minutes: 3600
+    env:
+      RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
 
     steps:
       - name: Configure Core RDP Settings
