@@ -114,3 +114,20 @@ jobs:
               exit 1
           }
           Write-Host "TCP connectivity successful!"
+
+      - name: Maintain Connection (Keep Alive)
+        run: |
+          Write-Host "`n=== RDP ACCESS ==="
+          Write-Host "Address: $env:TAILSCALE_IP"
+          Write-Host "Username: runneradmin"
+          Write-Host "Password: ${{ secrets.RDP_PASSWORD }}" # Dùng trực tiếp secret cho chắc
+          Write-Host "==================`n"
+          
+          Write-Host "Runner is keeping alive... Do not cancel the workflow!"
+          
+          # Đừng dùng Start-Process chạy ngầm, hãy chạy trực tiếp vòng lặp ở đây luôn
+          while ($true) {
+              $currentDate = Get-Date -Format "HH:mm:ss"
+              Write-Host "[$currentDate] RDP still active - connection maintained."
+              Start-Sleep -Seconds 300
+          }
