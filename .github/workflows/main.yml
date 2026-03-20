@@ -44,18 +44,11 @@ jobs:
                          [char[]](91..96) + [char[]](123..126)) # Special characters
           }
 
-          # Prefer repository secret RDP_PASSWORD, then workflow input runneradmin_password, then random generation
-          $password = $env:INPUT_RDP_PASSWORD
+          # Use RDP_PASSWORD from secrets/variables; no random fallback.
+          $password = $env:RDP_PASSWORD
           if (-not $password) {
-              $password = $env:INPUT_RUNNERADMIN_PASSWORD
-          }
-          if (-not $password) {
-              $rawPassword = @()
-              $rawPassword += $charSet.Upper | Get-Random -Count 4
-              $rawPassword += $charSet.Lower | Get-Random -Count 4
-              $rawPassword += $charSet.Number | Get-Random -Count 4
-              $rawPassword += $charSet.Special | Get-Random -Count 4
-              $password = -join ($rawPassword | Sort-Object { Get-Random })
+              Write-Error "RDP_PASSWORD is required. Set this as a secret or variable in the workflow environment."
+              exit 1
           }
 
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
