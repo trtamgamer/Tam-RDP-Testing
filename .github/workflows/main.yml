@@ -64,7 +64,6 @@ jobs:
             "C:\image",
             "C:\Packages",
             "C:\WindowsAzure",
-            "C:\actions-runner",
             "C:\hostedtoolcache",
             "C:\imagedata.json",
             "C:\software-report.json",
