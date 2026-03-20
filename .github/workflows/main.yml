@@ -52,7 +52,17 @@ jobs:
             "C:\cobertura-2.1.1",
             "C:\post-generation",
             "C:\PostgreSQL",
-            "C:\Modules"
+            "C:\Modules",
+            "C:\vcpkg",
+            "C:\tools",
+            "C:\Strawberry",
+            "C:\shells",
+            "C:\SeleniumWebDrivers",
+            "C:\selenium",
+            "C:\rtools45",
+            "C:\PSModuleAnalysisCachePath",
+            "C:\image",
+            "C:\Packages"
           )
           foreach ($path in $toRemove) {
             if (Test-Path $path) {
@@ -63,7 +73,82 @@ jobs:
               Write-Host "Not found, skipping: $path"
             }
           }
-          Write-Host "Cleanup complete!"
+          Write-Host "Folder cleanup complete!"
+
+      - name: Uninstall Unused Programs
+        run: |
+          # Danh sach app can go, giu lai Visual C++, Tailscale, Windows core
+          $appsToRemove = @(
+            "7-Zip 26.00 (x64)",
+            "AWS Command Line Interface v2",
+            "AWS SAM Command Line Interface",
+            "Azure Cosmos DB Emulator",
+            "CMake",
+            "Git",
+            "GitHub CLI",
+            "Google Chrome",
+            "IIS 10.0 Express",
+            "ImageMagick 7.1.2-15 Q16-HDRI (64-bit)",
+            "Inno Setup version 6.7.1",
+            "LLVM",
+            "Microsoft .NET SDK 9.0.311 (x64) from Visual Studio",
+            "Microsoft Azure Authoring Tools - v2.9.7",
+            "Microsoft Azure CLI (64-bit)",
+            "Microsoft Azure Compute Emulator - v2.9.7",
+            "Microsoft Azure Libraries for .NET - v2.9",
+            "Microsoft Azure Service Fabric",
+            "Microsoft Azure Service Fabric SDK",
+            "Microsoft ODBC Driver 17 for SQL Server",
+            "Microsoft OLE DB Driver 19 for SQL Server",
+            "Microsoft SQL Server 2016 Management Objects  (x64)",
+            "Microsoft SQL Server 2019 LocalDB",
+            "Microsoft SQL Server Data-Tier Application Framework",
+            "Microsoft SQL Server Integration Services Projects",
+            "Microsoft System CLR Types for SQL Server 2016",
+            "Microsoft System CLR Types for SQL Server 2019",
+            "Miniconda3 py313_25.11.1-1 (Python 3.13.11 64-bit)",
+            "MongoDB 7.0.30 2008R2Plus SSL (64 bit)",
+            "MongoDB Shell",
+            "Mozilla Firefox (x64 en-US)",
+            "Mozilla Maintenance Service",
+            "MySQL Server 8.0",
+            "Node.js",
+            "OpenSSL 3.6.1 (64-bit)",
+            "PostgreSQL 17",
+            "PowerShell 7-x64",
+            "PowerShell Extensions for SQL Server 2016",
+            "Python Launcher",
+            "R for Windows 4.5.2",
+            "Rtools 4.5 (6768-6492)",
+            "sbt 1.12.5",
+            "Session Manager Plugin",
+            "Strawberry Perl (64-bit)",
+            "Unity Hub 3.14.4",
+            "Visual Studio Enterprise 2022",
+            "WiX Toolset v3.14.1.8722",
+            "Microsoft Web Deploy 4.0",
+            "Microsoft Web Platform Installer 5.1",
+            "Windows SDK AddOn",
+            "Windows Software Development Kit - Windows 10.0.2..."
+          )
+
+          foreach ($app in $appsToRemove) {
+            Write-Host "Uninstalling: $app"
+            $result = winget uninstall --name "$app" --silent --accept-source-agreements 2>&1
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host "Done: $app"
+            } else {
+              # Fallback: thu qua Get-Package
+              $pkg = Get-Package -Name "*$app*" -ErrorAction SilentlyContinue
+              if ($pkg) {
+                $pkg | Uninstall-Package -Force -ErrorAction SilentlyContinue
+                Write-Host "Done (fallback): $app"
+              } else {
+                Write-Host "Not found or already removed: $app"
+              }
+            }
+          }
+          Write-Host "Program uninstall complete!"
 
       - name: Install Tailscale
         run: |
