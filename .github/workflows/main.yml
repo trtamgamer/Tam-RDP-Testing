@@ -102,8 +102,10 @@ jobs:
             "Microsoft SQL Server 2019 LocalDB",
             "Microsoft SQL Server Data-Tier Application Framework",
             "Microsoft SQL Server Integration Services Projects",
+            "Microsoft Visual Studio 2010 Tools for Office Runtime (x64)",
             "Microsoft System CLR Types for SQL Server 2016",
             "Microsoft System CLR Types for SQL Server 2019",
+            "Microsoft Visual Studio Tools for Applications 2022",
             "Miniconda3 py313_25.11.1-1 (Python 3.13.11 64-bit)",
             "MongoDB 7.0.30 2008R2Plus SSL (64 bit)",
             "MongoDB Shell",
@@ -126,7 +128,8 @@ jobs:
             "Microsoft Web Deploy 4.0",
             "Microsoft Web Platform Installer 5.1",
             "Windows SDK AddOn",
-            "Windows Software Development Kit - Windows 10.0.2..."
+            "vs_CoreEditorFonts",
+            "Windows Software Development Kit - Windows 10.0.26100.7705"
           )
 
           foreach ($app in $appsToRemove) {
