@@ -67,7 +67,7 @@ jobs:
                   Remove-LocalUser -Name $userName -ErrorAction Stop
                   Write-Host "Removed existing user $userName"
               } catch {
-                  Write-Warning ("Could not remove existing user " + $userName + ": " + $_.Exception.Message + ". Will continue with existing user.")
+                  Write-Warning ('Could not remove existing user {0}: {1}. Will continue with existing user.' -f $userName, $_.Exception.Message)
               }
           }
 
