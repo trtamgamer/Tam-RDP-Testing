@@ -6,89 +6,47 @@ on:
 jobs:
   secure-rdp:
     runs-on: windows-latest
-    timeout-minutes: 3600
-    env:
-      RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
+    timeout-minutes: 360
 
     steps:
       - name: Configure Core RDP Settings
         run: |
-          # Enable Remote Desktop and enable Network Level Authentication (recommended)
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
-                             -Name "fDenyTSConnections" -Value 0 -Force
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
-                             -Name "UserAuthentication" -Value 1 -Force
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
-                             -Name "SecurityLayer" -Value 1 -Force
-
-          # Remove any existing rule with the same name to avoid duplication
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1 -Force
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "SecurityLayer" -Value 2 -Force
           netsh advfirewall firewall delete rule name="RDP-Tailscale"
-          
-          # For testing, allow any incoming connection on port 3389
-          netsh advfirewall firewall add rule name="RDP-Tailscale" `
-            dir=in action=allow protocol=TCP localport=3389
-
-          # (Optional) Restart the Remote Desktop service to ensure changes take effect
+          netsh advfirewall firewall add rule name="RDP-Tailscale" dir=in action=allow protocol=TCP localport=3389
           Restart-Service -Name TermService -Force
 
-      - name: Create runneradmin User with Secure Password
+      - name: Set Password for runneradmin
         run: |
-          Add-Type -AssemblyName System.Security
-          $charSet = @{
-              Upper   = [char[]](65..90)      # A-Z
-              Lower   = [char[]](97..122)     # a-z
-              Number  = [char[]](48..57)      # 0-9
-              Special = ([char[]](33..47) + [char[]](58..64) +
-                         [char[]](91..96) + [char[]](123..126)) # Special characters
-          }
-
-          # Use RDP_PASSWORD from secrets/variables; no random fallback.
-          $password = $env:RDP_PASSWORD
+          $password = "${{ secrets.RDP_PASSWORD }}"
           if (-not $password) {
-              Write-Error "RDP_PASSWORD is required. Set this as a secret or variable in the workflow environment."
+              Write-Error "RDP_PASSWORD secret is not set!"
               exit 1
           }
-
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
-          $userName = "runneradmin"
+          Set-LocalUser -Name "runneradmin" -Password $securePass
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "runneradmin" -ErrorAction SilentlyContinue
+          Write-Host "Password set successfully for runneradmin"
+          echo "RDP_CREDS=User: runneradmin | Password: $password" >> $env:GITHUB_ENV
 
-          if (Get-LocalUser -Name $userName -ErrorAction SilentlyContinue) {
-              Write-Host "User $userName already exists and will be reused."
-          }
-
-          if (-not (Get-LocalUser -Name $userName -ErrorAction SilentlyContinue)) {
-              New-LocalUser -Name $userName -Password $securePass -AccountNeverExpires
-              Write-Host "Created user $userName"
-          } else {
-              Write-Host "User $userName already exists and will be reused."
-          }
-
-          Add-LocalGroupMember -Group "Administrators" -Member $userName -ErrorAction SilentlyContinue
-          Add-LocalGroupMember -Group "Remote Desktop Users" -Member $userName -ErrorAction SilentlyContinue
-
-
-          echo "RUNNERADMIN_CREDS=User: $userName | Password: $password" >> $env:GITHUB_ENV
-
-          if (-not (Get-LocalUser -Name $userName)) {
-              Write-Error "User creation failed"
-              exit 1
-          }
+      - name: Clean Desktop Icons
+        run: |
+          Remove-Item "$env:USERPROFILE\Desktop\*" -Force -Recurse -ErrorAction SilentlyContinue
+          Remove-Item "C:\Users\Public\Desktop\*" -Force -Recurse -ErrorAction SilentlyContinue
 
       - name: Install Tailscale
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.96.3-amd64.msi"
           $installerPath = "$env:TEMP\tailscale.msi"
-          
           Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
           Start-Process msiexec.exe -ArgumentList "/i", "`"$installerPath`"", "/quiet", "/norestart" -Wait
           Remove-Item $installerPath -Force
 
       - name: Establish Tailscale Connection
         run: |
-          # Bring up Tailscale with the provided auth key and set a unique hostname
           & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-$env:GITHUB_RUN_ID
-          
-          # Wait for Tailscale to assign an IP
           $tsIP = $null
           $retries = 0
           while (-not $tsIP -and $retries -lt 10) {
@@ -96,18 +54,15 @@ jobs:
               Start-Sleep -Seconds 5
               $retries++
           }
-          
           if (-not $tsIP) {
               Write-Error "Tailscale IP not assigned. Exiting."
               exit 1
           }
           echo "TAILSCALE_IP=$tsIP" >> $env:GITHUB_ENV
-      
+
       - name: Verify RDP Accessibility
         run: |
           Write-Host "Tailscale IP: $env:TAILSCALE_IP"
-          
-          # Test connectivity using Test-NetConnection against the Tailscale IP on port 3389
           $testResult = Test-NetConnection -ComputerName $env:TAILSCALE_IP -Port 3389
           if (-not $testResult.TcpTestSucceeded) {
               Write-Error "TCP connection to RDP port 3389 failed"
@@ -115,19 +70,24 @@ jobs:
           }
           Write-Host "TCP connectivity successful!"
 
-      - name: Maintain Connection (Keep Alive)
+      - name: Hide Agent Window
+        run: |
+          $src = "using System; using System.Runtime.InteropServices; public class Win32 { [DllImport(`"user32.dll`")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); [DllImport(`"user32.dll`")] public static extern IntPtr FindWindow(string lpClassName, string lpWindowName); }"
+          Add-Type -TypeDefinition $src -Language CSharp
+          $hwnd = [Win32]::FindWindow($null, "C:\ProgramData\GitHub\HostedComputeAgent\hosted-compute-agent")
+          if ($hwnd -ne [IntPtr]::Zero) { [Win32]::ShowWindow($hwnd, 0) }
+          Get-Process | Where-Object { $_.MainWindowTitle -like "*hosted-compute-agent*" } | ForEach-Object {
+              [Win32]::ShowWindow($_.MainWindowHandle, 0)
+          }
+
+      - name: Maintain Connection
         run: |
           Write-Host "`n=== RDP ACCESS ==="
           Write-Host "Address: $env:TAILSCALE_IP"
           Write-Host "Username: runneradmin"
-          Write-Host "Password: ${{ secrets.RDP_PASSWORD }}" # Dùng trực tiếp secret cho chắc
+          Write-Host "Password: ${{ secrets.RDP_PASSWORD }}"
           Write-Host "==================`n"
-          
-          Write-Host "Runner is keeping alive... Do not cancel the workflow!"
-          
-          # Đừng dùng Start-Process chạy ngầm, hãy chạy trực tiếp vòng lặp ở đây luôn
           while ($true) {
-              $currentDate = Get-Date -Format "HH:mm:ss"
-              Write-Host "[$currentDate] RDP still active - connection maintained."
+              Write-Host "[$(Get-Date)] RDP Active - Use Ctrl+C in workflow to terminate"
               Start-Sleep -Seconds 300
           }
