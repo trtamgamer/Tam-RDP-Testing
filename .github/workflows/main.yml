@@ -137,7 +137,7 @@ jobs:
                       
                       if (-not $p.WaitForExit(90000)) {
                         Stop-Process -Id $p.Id -Force
-                        Write-Host "Skip: $app (Treo lâu quá nên tui bỏ qua nha bà)" -ForegroundColor Yellow
+                        Write-Host "Skip: $app (The app is unresponsive, the system will automatically skip the uninstallation process.)" -ForegroundColor Yellow
                       } else {
                         if ($p.ExitCode -eq 0) { Write-Host "Done: $app" }
                         else { Write-Host "Failed: $app (Error Code: $($p.ExitCode))" }
