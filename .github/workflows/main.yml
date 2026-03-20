@@ -77,16 +77,14 @@ jobs:
 
       - name: Uninstall Unused Programs
         run: |
-          # Danh sach app can go, giu lai Visual C++, Tailscale, Windows core
+          # 7-Zip duoc giu lai, Visual C++, Tailscale, Windows core khong xoa
           $appsToRemove = @(
-            "7-Zip 26.00 (x64)",
             "AWS Command Line Interface v2",
             "AWS SAM Command Line Interface",
             "Azure Cosmos DB Emulator",
             "CMake",
             "Git",
             "GitHub CLI",
-            "Google Chrome",
             "IIS 10.0 Express",
             "ImageMagick 7.1.2-15 Q16-HDRI (64-bit)",
             "Inno Setup version 6.7.1",
@@ -115,7 +113,6 @@ jobs:
             "Node.js",
             "OpenSSL 3.6.1 (64-bit)",
             "PostgreSQL 17",
-            "PowerShell 7-x64",
             "PowerShell Extensions for SQL Server 2016",
             "Python Launcher",
             "R for Windows 4.5.2",
@@ -138,7 +135,6 @@ jobs:
             if ($LASTEXITCODE -eq 0) {
               Write-Host "Done: $app"
             } else {
-              # Fallback: thu qua Get-Package
               $pkg = Get-Package -Name "*$app*" -ErrorAction SilentlyContinue
               if ($pkg) {
                 $pkg | Uninstall-Package -Force -ErrorAction SilentlyContinue
@@ -149,6 +145,15 @@ jobs:
             }
           }
           Write-Host "Program uninstall complete!"
+
+      - name: Install WinRAR
+        run: |
+          $winrarUrl = "https://www.win-rar.com/fileadmin/winrar-versions/winrar-x64-713vn.exe"
+          $installerPath = "$env:TEMP\winrar-setup.exe"
+          Invoke-WebRequest -Uri $winrarUrl -OutFile $installerPath
+          Start-Process $installerPath -ArgumentList "/S" -Wait
+          Remove-Item $installerPath -Force
+          Write-Host "WinRAR installed!"
 
       - name: Install Tailscale
         run: |
