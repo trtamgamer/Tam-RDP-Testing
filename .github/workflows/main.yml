@@ -141,9 +141,8 @@ jobs:
                       } else {
                         if ($p.ExitCode -eq 0) { Write-Host "Done: $app" }
                         else { Write-Host "Failed: $app (Error Code: $($p.ExitCode))" }
-                      }
-                    }
-                    Write-Host "Program uninstall complete!"
+          }
+          Write-Host "Program uninstall complete!"
 
       - name: Install WinRAR
         run: |
