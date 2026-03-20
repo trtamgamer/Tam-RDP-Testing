@@ -62,7 +62,13 @@ jobs:
             "C:\rtools45",
             "C:\PSModuleAnalysisCachePath",
             "C:\image",
-            "C:\Packages"
+            "C:\Packages",
+            "C:\WindowsAzure",
+            "C:\actions-runner",
+            "C:\hostedtoolcache",
+            "C:\imagedata.json",
+            "C:\software-report.json",
+            "C:\software-report.md"
           )
           foreach ($path in $toRemove) {
             if (Test-Path $path) {
