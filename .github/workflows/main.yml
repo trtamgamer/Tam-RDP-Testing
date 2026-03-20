@@ -39,24 +39,45 @@ jobs:
       - name: Remove Unused Tools from C:\
         run: |
           $toRemove = @(
-            "C:\Android", "C:\Julia", "C:\Miniconda", "C:\mingw32", "C:\mingw64",
-            "C:\msys64", "C:\ghcup", "C:\npm", "C:\azureCli", "C:\azureDevOpsCli",
-            "C:\cobertura-2.1.1", "C:\post-generation", "C:\PostgreSQL", "C:\Modules",
-            "C:\vcpkg", "C:\tools", "C:\Strawberry", "C:\shells", "C:\SeleniumWebDrivers",
-            "C:\selenium", "C:\rtools45", "C:\PSModuleAnalysisCachePath", "C:\image", "C:\Packages"
+            "C:\Android",
+            "C:\Julia",
+            "C:\Miniconda",
+            "C:\mingw32",
+            "C:\mingw64",
+            "C:\msys64",
+            "C:\ghcup",
+            "C:\npm",
+            "C:\azureCli",
+            "C:\azureDevOpsCli",
+            "C:\cobertura-2.1.1",
+            "C:\post-generation",
+            "C:\PostgreSQL",
+            "C:\Modules",
+            "C:\vcpkg",
+            "C:\tools",
+            "C:\Strawberry",
+            "C:\shells",
+            "C:\SeleniumWebDrivers",
+            "C:\selenium",
+            "C:\rtools45",
+            "C:\PSModuleAnalysisCachePath",
+            "C:\image",
+            "C:\Packages"
           )
           foreach ($path in $toRemove) {
             if (Test-Path $path) {
+              Write-Host "Removing $path ..."
               Remove-Item $path -Recurse -Force -ErrorAction SilentlyContinue
               Write-Host "Done: $path"
             } else {
-              Write-Host "Skipping: $path"
+              Write-Host "Not found, skipping: $path"
             }
           }
           Write-Host "Folder cleanup complete!"
 
-      - name: Uninstall Unused Programs (Parallel)
+      - name: Uninstall Unused Programs
         run: |
+          # 7-Zip duoc giu lai, Visual C++, Tailscale, Windows core khong xoa
           $appsToRemove = @(
             "AWS Command Line Interface v2",
             "AWS SAM Command Line Interface",
@@ -92,7 +113,6 @@ jobs:
             "Node.js",
             "OpenSSL 3.6.1 (64-bit)",
             "PostgreSQL 17",
-            "PowerShell 7-x64",
             "PowerShell Extensions for SQL Server 2016",
             "Python Launcher",
             "R for Windows 4.5.2",
@@ -105,37 +125,30 @@ jobs:
             "WiX Toolset v3.14.1.8722",
             "Microsoft Web Deploy 4.0",
             "Microsoft Web Platform Installer 5.1",
-            "Windows SDK AddOn"
+            "Windows SDK AddOn",
+            "Windows Software Development Kit - Windows 10.0.2..."
           )
 
-          # Chay song song 5 app cung luc bang Start-Job
-          $jobs = @()
           foreach ($app in $appsToRemove) {
-            $jobs += Start-Job -ScriptBlock {
-              param($appName)
-              $result = winget uninstall --name "$appName" --silent --accept-source-agreements 2>&1
-              if ($LASTEXITCODE -eq 0) {
-                Write-Output "Done: $appName"
+            Write-Host "Uninstalling: $app"
+            $result = winget uninstall --name "$app" --silent --accept-source-agreements 2>&1
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host "Done: $app"
+            } else {
+              $pkg = Get-Package -Name "*$app*" -ErrorAction SilentlyContinue
+              if ($pkg) {
+                $pkg | Uninstall-Package -Force -ErrorAction SilentlyContinue
+                Write-Host "Done (fallback): $app"
               } else {
-                Write-Output "Not found or failed: $appName"
+                Write-Host "Not found or already removed: $app"
               }
-            } -ArgumentList $app
-
-            # Gioi han 5 job chay cung luc
-            while ((Get-Job -State Running).Count -ge 5) {
-              Start-Sleep -Seconds 2
             }
           }
-
-          # Doi tat ca job xong va in ket qua
-          Write-Host "Waiting for all uninstall jobs to complete..."
-          $jobs | Wait-Job | Receive-Job
-          $jobs | Remove-Job
-          Write-Host "Parallel uninstall complete!"
+          Write-Host "Program uninstall complete!"
 
       - name: Install WinRAR
         run: |
-          $winrarUrl = "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-701.exe"
+          $winrarUrl = "https://www.win-rar.com/fileadmin/winrar-versions/winrar-x64-713vn.exe"
           $installerPath = "$env:TEMP\winrar-setup.exe"
           Invoke-WebRequest -Uri $winrarUrl -OutFile $installerPath
           Start-Process $installerPath -ArgumentList "/S" -Wait
