@@ -146,6 +146,7 @@ jobs:
 
       - name: Install WinRAR
         run: |
+          Write-Host "Installing WinRAR..."
           $winrarUrl = "https://www.win-rar.com/fileadmin/winrar-versions/winrar-x64-713vn.exe"
           $installerPath = "$env:TEMP\winrar-setup.exe"
           Invoke-WebRequest -Uri $winrarUrl -OutFile $installerPath
@@ -155,6 +156,7 @@ jobs:
 
       - name: Install Tailscale
         run: |
+          Write-Host "Installing Tailscale..."
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.96.3-amd64.msi"
           $installerPath = "$env:TEMP\tailscale.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
