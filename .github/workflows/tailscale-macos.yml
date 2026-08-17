@@ -1,4 +1,4 @@
-name: Tailscale + SSH + VNC on macOS
+name: Tailscale on MacOS
 
 on:
   workflow_dispatch:
