@@ -20,6 +20,7 @@ jobs:
             --authkey="$TAILSCALE_AUTH_KEY" \
             --hostname=gh-linux-test \
             --advertise-exit-node
+          sudo tailscale set --accept-dns=false
 
       - name: Check Tailscale
         run: |
