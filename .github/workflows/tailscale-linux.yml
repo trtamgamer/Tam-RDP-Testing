@@ -8,6 +8,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Setup SSH
+        env:
+          SSH_PASSWORD: ${{ secrets.RDP_PASSWORD }}
+        run: |
+          sudo apt update && sudo apt upgrade -y
+          sudo apt install -y openssh-server
+          sudo systemctl enable --now ssh
+
+          sudo useradd -m -s /bin/bash runner || true
+          echo "runner:$SSH_PASSWORD" | sudo chpasswd
+          sudo usermod -aG sudo runner
+
       - name: Install Tailscale
         run: |
           curl -fsSL https://tailscale.com/install.sh | sh
@@ -38,18 +50,6 @@ jobs:
           tailscale ip -4
           tailscale ip -6
           tailscale netcheck
-
-      - name: Setup SSH
-        env:
-          SSH_PASSWORD: ${{ secrets.RDP_PASSWORD }}
-        run: |
-          sudo apt update
-          sudo apt install -y openssh-server
-          sudo systemctl enable --now ssh
-
-          sudo useradd -m -s /bin/bash runner || true
-          echo "runner:$SSH_PASSWORD" | sudo chpasswd
-          sudo usermod -aG sudo runner
 
       - name: Check SSH
         run: |
