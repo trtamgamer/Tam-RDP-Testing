@@ -118,14 +118,24 @@ jobs:
             -agent \
             -privs -all
 
+          # IMPORTANT: VNC-legacy (DES) auth does not carry a username, so
+          # screensharingd can't tell which console session to bind you to
+          # and instead creates a fresh, empty loginwindow session -> black
+          # screen, even though the real desktop (Dock/Finder) is alive
+          # under the "runner" user. Disabling legacy auth makes the client
+          # send a real username, so it attaches to runner's actual session.
           sudo "$ARD" \
             -configure \
             -clientopts \
-            -setvnclegacy -vnclegacy yes \
-            -setvncpw -vncpw "$RDP_PASSWORD"
+            -setvnclegacy -vnclegacy no
 
-          sudo "$ARD" -restart -agent -console
-          sudo "$ARD" -activate
+          # Set a real login password for "runner" so it can authenticate
+          # over (non-legacy) screen sharing. A root shell is needed here -
+          # plain `sudo dscl ...` can fail with "Permission denied. Please
+          # enter user's old password:".
+          sudo dscl -f /var/db/dslocal/nodes/Default . -passwd /Users/runner "$RDP_PASSWORD"
+
+          sudo "$ARD" -restart -agent
 
           echo "=== Final display state ==="
           system_profiler SPDisplaysDataType || true
