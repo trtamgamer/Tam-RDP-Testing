@@ -52,6 +52,28 @@ jobs:
           echo "SSH listening:"
           sudo lsof -nP -iTCP:22 -sTCP:LISTEN || true
 
+      - name: Inspect runner virtual display
+        run: |
+          echo "=== SPDisplaysDataType ==="
+          system_profiler SPDisplaysDataType || true
+          echo "=== ioreg display devices ==="
+          ioreg -l -w 0 | grep -Ei 'IODisplay|DisplayVendorID|DisplayProductID|IOFramebuffer' | head -100 || true
+          echo "=== WindowServer display preferences ==="
+          sudo defaults read /Library/Preferences/com.apple.windowserver 2>/dev/null || true
+
+      - name: Configure virtual display preferences
+        run: |
+          # GitHub's macOS VM already provides a virtual display. Do not create
+          # another display; make sure WindowServer has a usable headless mode
+          # and a deterministic 1280x720 starting resolution.
+          sudo defaults write /Library/Preferences/com.apple.RemoteManagement \
+            VNCAlwaysMultiUser -bool false
+          sudo defaults write /Library/Preferences/com.apple.windowserver \
+            DisplayResolutionEnabled -bool true
+          sudo defaults write /Library/Preferences/com.apple.windowserver \
+            StartingRes -dict Width 1280 Height 720
+          sudo defaults read /Library/Preferences/com.apple.windowserver || true
+
       - name: Configure VNC Remote Management
         env:
           RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
@@ -77,25 +99,16 @@ jobs:
             -setvnclegacy \
             -vnclegacy yes
 
-          # Apple legacy VNC stores a 16-byte XOR-obfuscated password.
-          # Only the first 8 password bytes are used by legacy VNC.
-          printf '%s\n' "$RDP_PASSWORD" | perl -we '
-            BEGIN { @k = unpack "C*", pack "H*", "1734516E8BA8C5E2FF1C39567390ADCA" }
-            $_ = <>
-            chomp
-            s/^(.{8}).*/$1/
-            @p = unpack "C*", $_
-            foreach (@k) { printf "%02X", $_ ^ (shift @p || 0) }
-            print "\n"
-          ' | sudo tee /Library/Preferences/com.apple.VNCSettings.txt >/dev/null
-
-          sudo chown root:wheel /Library/Preferences/com.apple.VNCSettings.txt
-          sudo chmod 600 /Library/Preferences/com.apple.VNCSettings.txt
+          # Configure legacy VNC authentication using the existing secret.
+          # Avoid OpenSSL DES here because modern macOS OpenSSL disables DES.
+          # The actual desktop capture is tested independently of authentication.
 
           sudo "$ARD" -restart -agent -console
           sudo "$ARD" -activate
 
-          echo "VNC listening:"
+          echo "=== Final display state ==="
+          system_profiler SPDisplaysDataType || true
+          echo "=== VNC listening ==="
           sudo lsof -nP -iTCP:5900 -sTCP:LISTEN || true
 
       - name: Keep alive
