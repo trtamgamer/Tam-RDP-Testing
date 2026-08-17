@@ -1,4 +1,4 @@
-name: Tailscale on MacOS
+name: Tailscale + SSH + VNC on macOS
 
 on:
   workflow_dispatch:
@@ -37,7 +37,6 @@ jobs:
         run: |
           if id -u runneradmin >/dev/null 2>&1; then
             echo "runneradmin already exists"
-            sudo sysadminctl -adminUser "$USER" -adminPassword '' -resetPasswordFor runneradmin -newPassword "$RDP_PASSWORD" 2>/dev/null || true
           else
             sudo sysadminctl -addUser runneradmin -fullName "Runner Admin" -password "$RDP_PASSWORD" -admin
           fi
@@ -55,13 +54,22 @@ jobs:
 
       - name: Enable VNC Remote Management
         run: |
-          sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+          ARD="/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart"
+
+          sudo "$ARD" \
+            -configure \
+            -allowAccessFor \
+            -specifiedUsers
+
+          sudo "$ARD" \
             -activate \
             -configure \
-            -access -on \
             -users runneradmin \
+            -access -on \
+            -agent \
             -privs -all \
-            -restart -agent -menu
+            -restart -agent
+
           echo "VNC listening:"
           sudo lsof -nP -iTCP:5900 -sTCP:LISTEN || true
 
