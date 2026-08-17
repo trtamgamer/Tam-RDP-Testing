@@ -1,0 +1,46 @@
+name: Tailscale on macOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  tailscale:
+    runs-on: macos-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Install Tailscale
+        run: |
+          brew install --quiet tailscale
+
+      - name: Connect Tailscale
+        env:
+          TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
+        run: |
+          sudo tailscaled install-system-daemon
+          sudo tailscale up \
+            --authkey="$TAILSCALE_AUTH_KEY" \
+            --hostname=gh-macos-test
+
+      - name: Check macOS and Tailscale
+        run: |
+          sw_vers
+          tailscale status
+          tailscale ip -4
+          tailscale ip -6
+          tailscale netcheck
+
+      - name: Enable SSH
+        run: |
+          sudo systemsetup -setremotelogin on
+          sudo launchctl print system/com.openssh.sshd >/dev/null
+          echo "SSH listening:"
+          sudo lsof -nP -iTCP:22 -sTCP:LISTEN || true
+
+      - name: Keep alive
+        run: |
+          while true; do
+            echo "Running..."
+            tailscale status
+            sleep 60
+          done
