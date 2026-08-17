@@ -1,0 +1,36 @@
+name: Tailscale Linux Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  tailscale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Install Tailscale
+        run: |
+          curl -fsSL https://tailscale.com/install.sh | sh
+
+      - name: Connect Tailscale
+        env:
+          TS_AUTHKEY: ${{ secrets.TS_AUTHKEY }}
+        run: |
+          sudo tailscale up \
+            --authkey=$TS_AUTHKEY \
+            --hostname gh-linux-test \
+            --advertise-exit-node
+
+      - name: Check status
+        run: |
+          tailscale status
+          tailscale netcheck
+
+      - name: Keep alive
+        run: |
+          while true; do
+            echo "Running..."
+            tailscale ping 100.100.100.100 || true
+            sleep 60
+          done
