@@ -17,14 +17,14 @@ jobs:
       - name: Remove unused desktop packages
         run: |
           sudo apt purge -y firefox 'gnome*' 'ubuntu-desktop*' 'ubuntu-gnome-desktop*' 'mesa*' || true
-          sudo snap remove firefox 2>/dev/null || true
+          sudo snap remove --purge firefox 2>/dev/null || true
           sudo apt autoremove -y
 
       - name: Setup SSH
         env:
           SSH_PASSWORD: ${{ secrets.RDP_PASSWORD }}
         run: |
-          sudo apt update && sudo apt upgrade -y
+          sudo apt update
           sudo apt install -y openssh-server
           sudo systemctl enable --now ssh
 
