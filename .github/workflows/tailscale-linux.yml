@@ -8,6 +8,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Disable unused Microsoft and Google repositories
+        run: |
+          sudo find /etc/apt/sources.list.d -type f \( -name '*.list' -o -name '*.sources' \) -print0 |
+            sudo xargs -0 -r grep -lE 'packages\.microsoft\.com|dl\.google\.com' |
+            sudo xargs -r -d '\n' -I{} mv "{}" "{}.disabled"
+
       - name: Setup SSH
         env:
           SSH_PASSWORD: ${{ secrets.RDP_PASSWORD }}
