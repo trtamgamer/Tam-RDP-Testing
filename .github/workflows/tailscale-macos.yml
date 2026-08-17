@@ -52,6 +52,17 @@ jobs:
           echo "SSH listening:"
           sudo lsof -nP -iTCP:22 -sTCP:LISTEN || true
 
+      # --- KEY FIX #1: force autologin so there's an actual console/desktop
+      # session for VNC to attach to. Without this, ARD/VNC connects fine
+      # but shows a black screen because nobody is "logged in" at console.
+      - name: Enable auto-login for runneradmin
+        env:
+          RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
+        run: |
+          sudo defaults write /Library/Preferences/com.apple.loginwindow autoLoginUser -string "runneradmin"
+          sudo pmset -a displaysleep 0 sleep 0 disksleep 0
+          echo "autoLoginUser set to runneradmin"
+
       - name: Inspect runner virtual display
         run: |
           echo "=== SPDisplaysDataType ==="
@@ -73,6 +84,19 @@ jobs:
           sudo defaults write /Library/Preferences/com.apple.windowserver \
             StartingRes -dict Width 1280 Height 720
           sudo defaults read /Library/Preferences/com.apple.windowserver || true
+
+      # --- KEY FIX #2: actually set the VNC password via kickstart, and
+      # restart the loginwindow so autologin (set above) actually takes
+      # effect and creates a real console session BEFORE we activate ARD.
+      - name: Restart loginwindow to trigger auto-login
+        run: |
+          sudo launchctl bootout system/com.apple.loginwindow 2>/dev/null || true
+          sleep 5
+          sudo launchctl bootstrap system /System/Library/LaunchDaemons/com.apple.loginwindow.plist 2>/dev/null || true
+          sleep 10
+          echo "=== who is logged in ==="
+          who || true
+          stat -f "%Su" /dev/console || true
 
       - name: Configure VNC Remote Management
         env:
@@ -96,18 +120,16 @@ jobs:
           sudo "$ARD" \
             -configure \
             -clientopts \
-            -setvnclegacy \
-            -vnclegacy yes
-
-          # Configure legacy VNC authentication using the existing secret.
-          # Avoid OpenSSL DES here because modern macOS OpenSSL disables DES.
-          # The actual desktop capture is tested independently of authentication.
+            -setvnclegacy -vnclegacy yes \
+            -setvncpw -vncpw "$RDP_PASSWORD"
 
           sudo "$ARD" -restart -agent -console
           sudo "$ARD" -activate
 
           echo "=== Final display state ==="
           system_profiler SPDisplaysDataType || true
+          echo "=== console session ==="
+          who || true
           echo "=== VNC listening ==="
           sudo lsof -nP -iTCP:5900 -sTCP:LISTEN || true
 
