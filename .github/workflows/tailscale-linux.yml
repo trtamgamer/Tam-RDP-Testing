@@ -14,10 +14,11 @@ jobs:
             sudo xargs -0 -r grep -lE 'packages\.microsoft\.com|dl\.google\.com' |
             sudo xargs -r -d '\n' -I{} mv "{}" "{}.disabled"
 
-      - name: Remove unused Firefox
+      - name: Remove unused desktop packages
         run: |
-          sudo apt purge -y firefox || true
+          sudo apt purge -y firefox 'gnome*' 'ubuntu-desktop*' 'ubuntu-gnome-desktop*' 'mesa*' || true
           sudo snap remove firefox 2>/dev/null || true
+          sudo apt autoremove -y
 
       - name: Setup SSH
         env:
