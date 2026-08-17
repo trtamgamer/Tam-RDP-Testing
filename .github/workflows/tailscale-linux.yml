@@ -20,11 +20,11 @@ jobs:
           sudo snap remove --purge firefox 2>/dev/null || true
           sudo apt autoremove -y
 
-      - name: Setup SSH
+      - name: Setup SSH and update system
         env:
           SSH_PASSWORD: ${{ secrets.RDP_PASSWORD }}
         run: |
-          sudo apt update
+          sudo apt update && sudo apt upgrade -y
           sudo apt install -y openssh-server
           sudo systemctl enable --now ssh
 
