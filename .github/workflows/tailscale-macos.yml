@@ -25,9 +25,26 @@ jobs:
         run: |
           sw_vers
           tailscale status
+          echo "Tailscale IPv4:"
           tailscale ip -4
+          echo "Tailscale IPv6:"
           tailscale ip -6
           tailscale netcheck
+
+      - name: Create VNC user
+        env:
+          RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
+        run: |
+          if id -u runneradmin >/dev/null 2>&1; then
+            echo "runneradmin already exists"
+            sudo sysadminctl -adminUser "$USER" -adminPassword '' -resetPasswordFor runneradmin -newPassword "$RDP_PASSWORD" 2>/dev/null || true
+          else
+            sudo sysadminctl -addUser runneradmin -fullName "Runner Admin" -password "$RDP_PASSWORD" -admin
+          fi
+          sudo dscl . -create /Users/runneradmin UserShell /bin/zsh
+          sudo dscl . -create /Users/runneradmin NFSHomeDirectory /Users/runneradmin
+          sudo createhomedir -c -u runneradmin >/dev/null 2>&1 || true
+          echo "VNC username: runneradmin"
 
       - name: Enable SSH
         run: |
@@ -36,28 +53,17 @@ jobs:
           echo "SSH listening:"
           sudo lsof -nP -iTCP:22 -sTCP:LISTEN || true
 
-      - name: Enable VNC Screen Sharing
+      - name: Enable VNC Remote Management
         run: |
           sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
             -activate \
-            -configure -access -on \
-            -configure -allowAccessFor -allUsers \
-            -configure -privs -all \
+            -configure \
+            -access -on \
+            -users runneradmin \
+            -privs -all \
             -restart -agent -menu
-
           echo "VNC listening:"
           sudo lsof -nP -iTCP:5900 -sTCP:LISTEN || true
-
-      - name: Show remote access information
-        run: |
-          echo "=== Tailscale ==="
-          tailscale status
-          echo
-          echo "=== SSH ==="
-          echo "ssh runner@$(tailscale ip -4)"
-          echo
-          echo "=== VNC ==="
-          echo "vnc://$(tailscale ip -4):5900"
 
       - name: Keep alive
         run: |
