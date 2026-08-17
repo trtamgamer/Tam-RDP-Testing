@@ -58,7 +58,6 @@ jobs:
         run: |
           ARD="/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart"
 
-          # Restrict ARD access to the dedicated remote user.
           sudo "$ARD" \
             -configure \
             -allowAccessFor \
@@ -72,39 +71,27 @@ jobs:
             -agent \
             -privs -all
 
-          # Enable Apple's legacy VNC authentication.
           sudo "$ARD" \
-            -activate \
             -configure \
             -clientopts \
             -setvnclegacy \
             -vnclegacy yes
 
-          # Generate Apple's legacy VNC password file without OpenSSL DES.
-          # Legacy VNC passwords are limited to the first 8 characters.
-          python3 - "$RDP_PASSWORD" <<'PY'
-          import pathlib
-          import sys
+          # Apple legacy VNC stores a 16-byte XOR-obfuscated password.
+          # Only the first 8 password bytes are used by legacy VNC.
+          printf '%s\n' "$RDP_PASSWORD" | perl -we '
+            BEGIN { @k = unpack "C*", pack "H*", "1734516E8BA8C5E2FF1C39567390ADCA" }
+            $_ = <>
+            chomp
+            s/^(.{8}).*/$1/
+            @p = unpack "C*", $_
+            foreach (@k) { printf "%02X", $_ ^ (shift @p || 0) }
+            print "\n"
+          ' | sudo tee /Library/Preferences/com.apple.VNCSettings.txt >/dev/null
 
-          password = sys.argv[1].encode("utf-8")[:8]
-          key = bytes.fromhex("1734516E8BA8C5E2FF1C39567390ADCA")
-          padded = password.ljust(8, b"\x00")
-          encrypted = bytes(
-              key[i] ^ (padded[i] if i < 8 else 0)
-              for i in range(len(key))
-          )
+          sudo chown root:wheel /Library/Preferences/com.apple.VNCSettings.txt
+          sudo chmod 600 /Library/Preferences/com.apple.VNCSettings.txt
 
-          pathlib.Path("/tmp/com.apple.VNCSettings.txt").write_text(
-              encrypted.hex().upper() + "\n",
-              encoding="ascii",
-          )
-          PY
-          sudo install -o root -g wheel -m 600 \
-            /tmp/com.apple.VNCSettings.txt \
-            /Library/Preferences/com.apple.VNCSettings.txt
-          rm -f /tmp/com.apple.VNCSettings.txt
-
-          # Restart the ARD console agent and activate Remote Management.
           sudo "$ARD" -restart -agent -console
           sudo "$ARD" -activate
 
