@@ -18,12 +18,14 @@ jobs:
         run: |
           sudo tailscale up \
             --authkey="$TAILSCALE_AUTH_KEY" \
-            --hostname=gh-linux-test
+            --hostname=gh-linux-test \
+            --advertise-exit-node
 
       - name: Check Tailscale
         run: |
           tailscale status
           tailscale ip -4
+          tailscale ip -6
           tailscale netcheck
 
       - name: Setup SSH
