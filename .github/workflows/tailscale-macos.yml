@@ -1,4 +1,4 @@
-name: Tailscale on macOS
+name: Tailscale + SSH + VNC on macOS
 
 on:
   workflow_dispatch:
@@ -35,6 +35,29 @@ jobs:
           sudo launchctl print system/com.openssh.sshd >/dev/null
           echo "SSH listening:"
           sudo lsof -nP -iTCP:22 -sTCP:LISTEN || true
+
+      - name: Enable VNC Screen Sharing
+        run: |
+          sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+            -activate \
+            -configure -access -on \
+            -configure -allowAccessFor -allUsers \
+            -configure -privs -all \
+            -restart -agent -menu
+
+          echo "VNC listening:"
+          sudo lsof -nP -iTCP:5900 -sTCP:LISTEN || true
+
+      - name: Show remote access information
+        run: |
+          echo "=== Tailscale ==="
+          tailscale status
+          echo
+          echo "=== SSH ==="
+          echo "ssh runner@$(tailscale ip -4)"
+          echo
+          echo "=== VNC ==="
+          echo "vnc://$(tailscale ip -4):5900"
 
       - name: Keep alive
         run: |
