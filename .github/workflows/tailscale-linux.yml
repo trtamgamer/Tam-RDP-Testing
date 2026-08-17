@@ -14,6 +14,11 @@ jobs:
             sudo xargs -0 -r grep -lE 'packages\.microsoft\.com|dl\.google\.com' |
             sudo xargs -r -d '\n' -I{} mv "{}" "{}.disabled"
 
+      - name: Remove unused Firefox
+        run: |
+          sudo apt purge -y firefox || true
+          sudo snap remove firefox 2>/dev/null || true
+
       - name: Setup SSH
         env:
           SSH_PASSWORD: ${{ secrets.RDP_PASSWORD }}
