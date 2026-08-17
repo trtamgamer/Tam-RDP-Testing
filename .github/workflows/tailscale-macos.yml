@@ -6,7 +6,6 @@ on:
 jobs:
   tailscale:
     runs-on: macos-latest
-    timeout-minutes: 360
 
     steps:
       - name: Install Tailscale
