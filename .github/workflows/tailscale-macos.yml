@@ -56,6 +56,7 @@ jobs:
         run: |
           ARD="/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart"
 
+          # Restrict ARD access to the dedicated remote user.
           sudo "$ARD" \
             -configure \
             -allowAccessFor \
@@ -69,6 +70,14 @@ jobs:
             -agent \
             -privs -all \
             -restart -agent
+
+          # Enable Apple's legacy VNC authentication for VNC clients.
+          sudo "$ARD" \
+            -activate \
+            -configure \
+            -clientopts \
+            -setvnclegacy \
+            -vnclegacy yes
 
           echo "VNC listening:"
           sudo lsof -nP -iTCP:5900 -sTCP:LISTEN || true
