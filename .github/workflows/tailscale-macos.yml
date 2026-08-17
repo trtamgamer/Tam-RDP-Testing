@@ -85,15 +85,16 @@ jobs:
             StartingRes -dict Width 1280 Height 720
           sudo defaults read /Library/Preferences/com.apple.windowserver || true
 
-      # --- KEY FIX #2: actually set the VNC password via kickstart, and
-      # restart the loginwindow so autologin (set above) actually takes
-      # effect and creates a real console session BEFORE we activate ARD.
-      - name: Restart loginwindow to trigger auto-login
+      # NOTE: do NOT bootout/bootstrap com.apple.loginwindow here.
+      # On a GitHub-hosted macOS VM, that daemon underpins the GUI session
+      # the Actions runner itself depends on — killing it cancels the job
+      # (that's the "operation was canceled" error). autoLoginUser above
+      # takes effect on the VM's next real boot cycle; we can't safely
+      # force it mid-session without a full VM reboot, which would also
+      # kill the runner process. So we just check current session state
+      # and let kickstart -restart -console (below) re-bind the display.
+      - name: Check current console session
         run: |
-          sudo launchctl bootout system/com.apple.loginwindow 2>/dev/null || true
-          sleep 5
-          sudo launchctl bootstrap system /System/Library/LaunchDaemons/com.apple.loginwindow.plist 2>/dev/null || true
-          sleep 10
           echo "=== who is logged in ==="
           who || true
           stat -f "%Su" /dev/console || true
