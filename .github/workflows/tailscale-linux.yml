@@ -1,0 +1,54 @@
+name: Tailscale on Linux
+
+on:
+  workflow_dispatch:
+
+jobs:
+  tailscale:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Tailscale
+        run: |
+          curl -fsSL https://tailscale.com/install.sh | sh
+
+      - name: Connect Tailscale
+        env:
+          TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
+        run: |
+          sudo tailscale up \
+            --authkey="$TAILSCALE_AUTH_KEY" \
+            --hostname=gh-linux-test
+
+      - name: Check Tailscale
+        run: |
+          tailscale status
+          tailscale ip -4
+          tailscale netcheck
+
+      - name: Setup SSH
+        env:
+          SSH_PASSWORD: ${{ secrets.RDP_PASSWORD }}
+        run: |
+          sudo apt update && sudo apt upgrade -y
+          sudo apt install -y openssh-server
+
+          sudo systemctl enable --now ssh
+
+          sudo useradd -m -s /bin/bash runner || true
+          echo "runner:$SSH_PASSWORD" | sudo chpasswd
+          sudo usermod -aG sudo runner
+
+      - name: Check SSH
+        run: |
+          systemctl status ssh --no-pager
+          tailscale ip -4
+          ss -lntp | grep ':22'
+
+      - name: Keep alive
+        run: |
+          while true; do
+            echo "Running..."
+            tailscale status
+            sleep 60
+          done
