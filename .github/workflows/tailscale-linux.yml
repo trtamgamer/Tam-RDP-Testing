@@ -73,8 +73,5 @@ jobs:
 
       - name: Keep alive
         run: |
-          while true; do
-            echo "Running..."
-            tailscale status
-            sleep 60
-          done
+          echo "Tailscale exit node is running. Keeping the runner alive..."
+          sleep 21600
